@@ -27,10 +27,14 @@ writeFileSync(join(runsDir, '2026-01-03.jsonl'), [...rows, 'this is not json', '
 const app = createApp({ ...base, runsDir });
 const jobs = ['digest/render', 'fixtures/refresh', 'lane/sync', 'notes/backup'];
 
+// The page escapes its text as HTML ("didn&#39;t"); compare against what a reader sees.
+const text = (html: string) =>
+  html.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
 describe('GET /digest/:night', () => {
   it('renders a night with rows', async () => {
     const res = await app.request('/digest/2026-01-01');
-    const html = await res.text();
+    const html = text(await res.text());
     expect(res.status).toBe(200);
     for (const job of jobs) expect(html).toContain(job);
     expect(html).toContain('—'); // digest/render has no owner
@@ -50,7 +54,7 @@ describe('GET /digest/:night', () => {
 
   it('still renders when a line did not parse', async () => {
     const res = await app.request('/digest/2026-01-03');
-    const html = await res.text();
+    const html = text(await res.text());
     expect(res.status).toBe(200);
     for (const job of jobs) expect(html).toContain(job);
     expect(html).toContain("1 line didn't parse");
